@@ -5,7 +5,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 
 # If modifying the calendar, define the SCOPES
@@ -15,7 +15,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 CALENDAR_ID = 'primary'  # Use 'primary' for the primary calendar
 
 # Path to store the pickle file
-PICKLE_FILE = 'calendar_events.pickle'
+PICKLE_FILE = 'calendar_events.tmp'
 
 def authenticate_google_account():
     """Authenticate the user and return the service object."""
@@ -91,19 +91,26 @@ def load_events_from_pickle():
 
 def open_zoom_links(events):
     """Iterate over events and open any Zoom URLs found within 20 seconds of start time."""
-    now = datetime.now(pytz.utc)  # Current time in UTC
+    now = datetime.now(timezone.utc)  # Current time in UTC
     for event in events:
         event_start = event['start'].get('dateTime')
         if event_start:
-            event_start = datetime.fromisoformat(event_start).replace(tzinfo=pytz.utc)
-            time_diff = event_start - now
-            
-            # Check if the event starts within the next 20 seconds
-            if timedelta(seconds=0) <= time_diff <= timedelta(seconds=20):
-                zoom_url = get_zoom_link_from_event(event)
-                if zoom_url:
-                    print(f"Zoom link found and event starts in {time_diff.seconds} seconds: {zoom_url}")
-                    webbrowser.open(zoom_url)  # Opens the Zoom link in the default web browser
+            event_start = datetime.fromisoformat(event_start) 
+
+            tmp_file = str(event_start.timestamp()) + ".tmp"
+            if os.path.exists(tmp_file):
+                pass
+            else:
+                time_diff = event_start - now
+                print(time_diff)
+                # Check if the event starts within the next 20 seconds
+                if timedelta(seconds=0) <= time_diff <= timedelta(seconds=20):
+                    zoom_url = get_zoom_link_from_event(event)
+                    with open(tmp_file,'w') as f:
+                        f.write('.')
+                    if zoom_url:
+                        print(f"Zoom link found and event starts in {time_diff.seconds} seconds: {zoom_url}")
+                        webbrowser.open(zoom_url)  # Opens the Zoom link in the default web browser
 
 def main():
     """Main function to authenticate, fetch events, and store/retrieve them from pickle."""
