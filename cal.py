@@ -7,6 +7,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta, timezone
 import pytz
+from msgbox import getConfirmation
+
 
 # If modifying the calendar, define the SCOPES
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -109,8 +111,9 @@ def open_zoom_links(events):
                     with open(tmp_file,'w') as f:
                         f.write('.')
                     if zoom_url:
-                        print(f"Zoom link found and event starts in {time_diff.seconds} seconds: {zoom_url}")
-                        webbrowser.open(zoom_url)  # Opens the Zoom link in the default web browser
+                        if getConfirmation():
+                            print(f"Zoom link found and event starts in {time_diff.seconds} seconds: {zoom_url}")
+                            webbrowser.open(zoom_url)  # Opens the Zoom link in the default web browser
 
 def main():
     """Main function to authenticate, fetch events, and store/retrieve them from pickle."""
